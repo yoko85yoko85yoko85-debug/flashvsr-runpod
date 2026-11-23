@@ -154,3 +154,13 @@ ImageIO FFmpeg setting. Conda's older FFmpeg cannot shadow the system executable
 Both preprocessing and final encoding use `-vsync 0` (timestamp passthrough),
 which also works with older system FFmpeg versions lacking `-fps_mode`.
 Worker version: `flashvsr-plus-turbo-v1.1`. Model and attention settings unchanged.
+
+## v1.2 Triton runtime compiler fix
+
+Install `build-essential` (GCC/G++ and libc headers), with explicit
+`CC=/usr/bin/gcc` and `CXX=/usr/bin/g++`. Triton needs a host C compiler
+to build its CUDA-driver helper at runtime, even though the model and operator
+can be imported without one. The Docker build now compiles and loads a small
+C shared library using the actual Python environment's `Python.h` before
+downloading model weights. This is a host compiler check, not a GPU test.
+Worker version: `flashvsr-plus-turbo-v1.2`.
