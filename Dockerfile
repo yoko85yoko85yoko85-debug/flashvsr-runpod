@@ -11,6 +11,6 @@ WORKDIR /app
 RUN python -c "import ctypes, os, pathlib, subprocess, sysconfig, tempfile; d=pathlib.Path(tempfile.mkdtemp()); src=d/'check.c'; so=d/'check.so'; src.write_text('#include <Python.h>\nint check(void){return PY_MAJOR_VERSION;}\n'); subprocess.run([os.environ['CC'], '-shared', '-fPIC', '-I'+sysconfig.get_path('include'), str(src), '-o', str(so)], check=True); assert ctypes.CDLL(str(so)).check()==3; print('BUILD_C_COMPILER_OK: Python-header C shared library compiled and loaded')"
 COPY download_models.py ./
 RUN python download_models.py
-COPY handler.py runtime.py media.py engine.py ./
-RUN python -m py_compile handler.py runtime.py media.py engine.py && python -c "import torch, triton, flashvsr_attn; from inference import InferenceRequest; from models import attention_kernel_status; assert torch.__version__.startswith('2.7.1'); assert attention_kernel_status()['triton_block_sparse']; print('BUILD_IMPORT_OK; GPU inference not tested during build')"
+COPY handler.py runtime.py media.py engine.py transfer.py ./
+RUN python -m py_compile handler.py runtime.py media.py engine.py transfer.py && python -c "import torch, triton, flashvsr_attn; from inference import InferenceRequest; from models import attention_kernel_status; assert torch.__version__.startswith('2.7.1'); assert attention_kernel_status()['triton_block_sparse']; print('BUILD_IMPORT_OK; GPU inference not tested during build')"
 CMD ["python", "-u", "handler.py"]
