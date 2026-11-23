@@ -146,3 +146,11 @@ Official code and model are Apache-2.0. The upstream license remains in the imag
 - https://github.com/OpenImagingLab/FlashVSR_Plus
 - https://huggingface.co/ruchangyao/FlashVSR_plus
 - https://github.com/OpenImagingLab/FlashVSR
+
+## v1.1 FFmpeg compatibility fix
+
+Use `/usr/bin/ffmpeg` and `/usr/bin/ffprobe` explicitly, matching the existing
+ImageIO FFmpeg setting. Conda's older FFmpeg cannot shadow the system executable.
+Both preprocessing and final encoding use `-vsync 0` (timestamp passthrough),
+which also works with older system FFmpeg versions lacking `-fps_mode`.
+Worker version: `flashvsr-plus-turbo-v1.1`. Model and attention settings unchanged.
