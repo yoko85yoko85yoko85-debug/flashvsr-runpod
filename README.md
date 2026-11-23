@@ -22,7 +22,7 @@ Connect this repository, then select:
 | Container disk | 60GB |
 | Allowed CUDA | 12.8 or newer compatible driver |
 | Initialization timeout | 900 seconds |
-| Execution timeout | 1200 seconds |
+| Execution timeout | 2400 seconds |
 | Idle timeout | 5 seconds |
 | Network/global volume | Not required |
 | Cached model field / HF token / start command | Leave empty |
@@ -75,7 +75,7 @@ Do not use the RTX VSR app with this endpoint: its request settings differ.
 - `seed`: fixed integer 0–2147483647, default 1.
 - `temporal_compression`: 4 (default, faster), 2 or 1 (large-motion option,
   increased computation). It does not change output FPS or drop source frames.
-- Max input: 6 MiB, 8 seconds, 480 frames, 1–60 FPS, constant frame rate, SDR,
+- Max input: 6 MiB, 30 seconds, 1800 frames, 1–60 FPS, constant frame rate, SDR,
   square pixels. Reject unsupported HDR and VFR rather than silently converting.
 - Initial model-output limit: 2048px on each side. Examples: 512²→2048² at 4x,
   800²→1600² at 2x. This is a service limit, not a claim that all allowed clips
@@ -101,7 +101,7 @@ RunPod adds queue `delayTime` and full `executionTime` separately.
 Each job uses an isolated GPU process; model loading repeats between jobs.
 Weights are baked into the image, avoiding a fresh Hugging Face download per job.
 Cold image pulls, first Triton JIT compilation and CUDA initialization still cost time.
-The child process group is stopped after15min; tempfiles are removed.
+The child process group is stopped after30min; tempfiles are removed.
 
 ## Reproducibility / attention
 
@@ -164,3 +164,22 @@ can be imported without one. The Docker build now compiles and loads a small
 C shared library using the actual Python environment's `Python.h` before
 downloading model weights. This is a host compiler check, not a GPU test.
 Worker version: `flashvsr-plus-turbo-v1.2`.
+
+## v1.3 30-second video transfer
+
+Use RunPod branch `long-video-v1.3`; set Execution timeout to **2400 seconds**.
+Maximum duration30seconds, CFR1–60FPS, at most1800frames. All source timestamps
+are inspected (including >1000 frames). Model/attention/quality configuration
+is unchanged; numeric streaming decode interval4 continues to bound memory.
+30-second real GPU inference has not yet been tested.
+
+The updated Site uploads input to its R2 transfer store and submits
+`video_url`, `output_upload_url`, `output_download_url` instead of base64.
+Only the exact HTTPS Site origin and scoped media paths are allowed; redirects
+are rejected. Transfers stream to/from disk with a64MiB limit; output is
+returned as a URL. These are per-file limits, with no automatic bitrate reduction.
+The inline base64 API remains supported with its existing6MiB bounds.
+Video URLs use independent random read/write capabilities and expire after24h.
+The Site removes uploaded input after output upload; expired objects are
+removed on access or future bounded cleanup. Tokens are redacted in errors.
+A compatible Site version is required; callers should not construct URLs manually.
