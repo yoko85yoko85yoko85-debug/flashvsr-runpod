@@ -11,7 +11,7 @@ UPSTREAM_REVISION = 'b515ffc6dba57fdc9ad84c66cadd87d05f27590a'
 
 
 def ffmpeg(args):
-    subprocess.run(['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y',
+    subprocess.run(['/usr/bin/ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y',
                     *args], check=True, timeout=120)
 
 
@@ -27,7 +27,7 @@ def geometry_filter(meta):
 
 def prepare(source, destination, meta):
     ffmpeg(['-protocol_whitelist', 'file,pipe', '-i', str(source), '-map', '0:v:0',
-            '-an', '-vf', geometry_filter(meta), '-fps_mode', 'passthrough',
+            '-an', '-vf', geometry_filter(meta), '-vsync', '0',
             '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '0',
             '-threads', '2', '-pix_fmt', 'yuv420p', str(destination)])
 
@@ -36,7 +36,7 @@ def finalize(raw, source, destination, meta):
     ffmpeg(['-i', str(raw), '-protocol_whitelist', 'file,pipe', '-i', str(source),
             '-map', '0:v:0', '-map', '1:a:0?',
             '-vf', f"crop={meta['width']}:{meta['height']}:0:0,setsar=1",
-            '-fps_mode', 'passthrough', '-c:v', 'libx264', '-preset', 'veryfast',
+            '-vsync', '0', '-c:v', 'libx264', '-preset', 'veryfast',
             '-crf', '18', '-threads', '2', '-pix_fmt', 'yuv420p',
             '-c:a', 'aac', '-b:a', '128k', '-af', 'apad',
             '-t', str(meta['duration_seconds']), '-movflags', '+faststart', str(destination)])
