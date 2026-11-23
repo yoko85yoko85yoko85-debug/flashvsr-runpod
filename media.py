@@ -5,7 +5,7 @@ import math
 from pathlib import Path
 import subprocess
 
-MAX_FRAMES = 480
+MAX_FRAMES = 1800
 
 
 def probe(path):
@@ -36,8 +36,8 @@ def metadata(path, scale):
         fps = Fraction(v.get('avg_frame_rate', '0/1'))
     except (ValueError, ZeroDivisionError):
         raise ValueError('Invalid video frame rate')
-    if not math.isfinite(duration) or not 0 < duration <= 8.1 or not 1 <= fps <= 60:
-        raise ValueError('Input must be at most 8 seconds and 1-60 fps')
+    if not math.isfinite(duration) or not 0 < duration <= 30.1 or not 1 <= fps <= 60:
+        raise ValueError('Input must be at most 30 seconds and 1-60 fps')
     if min(width, height) < 64 or max(width, height) > 1920 or width * height > 1920 * 1080:
         raise ValueError('Input dimensions must be 64-1920px, with area <= 1920x1080')
     ow, oh = width * scale, height * scale
@@ -48,11 +48,11 @@ def metadata(path, scale):
         raise ValueError('Initial version limits model output to 2048px per side; use 2x or a smaller source')
     # Inspect timestamps: reject VFR rather than silently changing its timing.
     r = subprocess.run(['/usr/bin/ffprobe', '-v', 'error', '-protocol_whitelist', 'file,pipe',
-        '-select_streams', 'v:0', '-read_intervals', '%+#1000', '-show_entries', 'frame=best_effort_timestamp_time',
+        '-select_streams', 'v:0', '-read_intervals', '%+#2000', '-show_entries', 'frame=best_effort_timestamp_time',
         '-of', 'json', str(path)], capture_output=True, text=True, timeout=45, check=True)
     frames = json.loads(r.stdout).get('frames', [])
     if not 2 <= len(frames) <= MAX_FRAMES:
-        raise ValueError('Input must contain 2-480 video frames')
+        raise ValueError('Input must contain 2-1800 video frames')
     times = [float(f['best_effort_timestamp_time']) for f in frames]
     if any(not math.isfinite(t) for t in times):
         raise ValueError('Invalid video timestamps')
