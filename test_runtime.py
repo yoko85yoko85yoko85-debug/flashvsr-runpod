@@ -50,7 +50,7 @@ class Tests(unittest.TestCase):
         with patch.object(runtime,'worker_child',side_effect=child):
             r=runtime.execute(runtime.validate(self.request(scale=2)))
         self.assertEqual(base64.b64decode(r['video_base64']),b'fixture')
-        self.assertEqual(r['worker_version'],'flashvsr-plus-turbo-v1')
+        self.assertEqual(r['worker_version'],'flashvsr-plus-turbo-v1.1')
 
     def test_digest(self):
         import hashlib
