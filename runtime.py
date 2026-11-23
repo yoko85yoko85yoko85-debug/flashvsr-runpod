@@ -12,7 +12,7 @@ import tempfile
 import threading
 import time
 
-VERSION = 'flashvsr-plus-turbo-v1'
+VERSION = 'flashvsr-plus-turbo-v1.1'
 HERE = Path(__file__).resolve().parent
 LOCK = threading.Lock()
 MAX_INPUT = 6 * 1024**2
