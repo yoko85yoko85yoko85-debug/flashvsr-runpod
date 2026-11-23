@@ -9,7 +9,7 @@ MAX_FRAMES = 480
 
 
 def probe(path):
-    r = subprocess.run(['ffprobe', '-v', 'error', '-protocol_whitelist', 'file,pipe',
+    r = subprocess.run(['/usr/bin/ffprobe', '-v', 'error', '-protocol_whitelist', 'file,pipe',
         '-show_streams', '-show_format', '-of', 'json', str(path)],
         capture_output=True, text=True, timeout=30, check=True)
     return json.loads(r.stdout)
@@ -47,7 +47,7 @@ def metadata(path, scale):
     if max(mw, mh) > 2048 or mw*mh > 2048*2048:
         raise ValueError('Initial version limits model output to 2048px per side; use 2x or a smaller source')
     # Inspect timestamps: reject VFR rather than silently changing its timing.
-    r = subprocess.run(['ffprobe', '-v', 'error', '-protocol_whitelist', 'file,pipe',
+    r = subprocess.run(['/usr/bin/ffprobe', '-v', 'error', '-protocol_whitelist', 'file,pipe',
         '-select_streams', 'v:0', '-read_intervals', '%+#1000', '-show_entries', 'frame=best_effort_timestamp_time',
         '-of', 'json', str(path)], capture_output=True, text=True, timeout=45, check=True)
     frames = json.loads(r.stdout).get('frames', [])
