@@ -5,6 +5,8 @@ from urllib.parse import urlsplit,parse_qs
 import requests
 ORIGIN='https://frame-flashvsr-studio-nov23.sableflint8.chatgpt.site'
 MAX_BYTES=64*1024**2
+# Sites' edge rejects Python's default user-agent on media requests.
+HEADERS={'User-Agent':'Mozilla/5.0'}
 
 def valid_url(value,kind):
     if not isinstance(value,str):return False
@@ -20,7 +22,7 @@ def validate_links(p):
     if a.split('/')[2]!=b.split('/')[2] or b!=c:raise ValueError('Video transfer IDs must match')
 
 def download(url,destination):
-    with requests.get(url,stream=True,timeout=(15,120),allow_redirects=False) as r:
+    with requests.get(url,headers=HEADERS,stream=True,timeout=(15,120),allow_redirects=False) as r:
         if r.status_code!=200:raise RuntimeError('Input video transfer failed ('+str(r.status_code)+')')
         length=int(r.headers.get('Content-Length','0'))
         if length>MAX_BYTES:raise ValueError('Input video exceeds 64 MiB')
@@ -36,7 +38,7 @@ def upload(url,path):
     path=Path(path)
     if not 0<path.stat().st_size<=MAX_BYTES:raise ValueError('Output video exceeds 64 MiB')
     with path.open('rb') as f:
-        r=requests.put(url,data=f,headers={'Content-Type':'video/mp4','Content-Length':str(path.stat().st_size)},timeout=(15,180),allow_redirects=False)
+        r=requests.put(url,data=f,headers={**HEADERS,'Content-Type':'video/mp4','Content-Length':str(path.stat().st_size)},timeout=(15,180),allow_redirects=False)
     try:
         if r.status_code!=200:raise RuntimeError('Output video transfer failed ('+str(r.status_code)+')')
     finally:r.close()
