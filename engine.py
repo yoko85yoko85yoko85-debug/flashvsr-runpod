@@ -12,7 +12,7 @@ UPSTREAM_REVISION = 'b515ffc6dba57fdc9ad84c66cadd87d05f27590a'
 
 def ffmpeg(args):
     subprocess.run(['/usr/bin/ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y',
-                    *args], check=True, timeout=120)
+                    *args], check=True, timeout=300)
 
 
 def geometry_filter(meta):
