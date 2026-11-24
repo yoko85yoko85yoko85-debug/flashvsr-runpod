@@ -1,0 +1,123 @@
+{
+  "last_node_id": 3,
+  "last_link_id": 1,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "LoadVideo",
+      "title": "元動画を読み込む",
+      "pos": [
+        0,
+        0
+      ],
+      "size": [
+        420,
+        360
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VIDEO",
+          "type": "VIDEO",
+          "links": [
+            1
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadVideo"
+      },
+      "widgets_values": [
+        "flashvsr-example.mp4",
+        "video"
+      ]
+    },
+    {
+      "id": 2,
+      "type": "FlashVSRPodTurbo",
+      "pos": [
+        500,
+        0
+      ],
+      "size": [
+        480,
+        520
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "video",
+          "type": "VIDEO",
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "VIDEO",
+          "type": "VIDEO",
+          "links": [],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "FlashVSRPodTurbo"
+      },
+      "widgets_values": [
+        "2倍",
+        "標準（速度優先）",
+        1,
+        "fixed"
+      ]
+    },
+    {
+      "id": 3,
+      "type": "MarkdownNote",
+      "title": "使い方",
+      "pos": [
+        0,
+        420
+      ],
+      "size": [
+        460,
+        670
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "## FlashVSR+ Turbo：アップスケール専用\n\n1. Load Videoで動画をアップロード。\n2. 倍率を2倍または4倍に設定。\n3. Queueを実行すると、拡大後のMP4を保存・プレビューします。\n\n初期値：2倍・標準（速度優先）・シード1。\n公式モデル推奨は4倍です。2倍は実用サイズで比較する選択肢です。\n\n30秒まで・固定fps1〜60・SDR動画。出力各辺2048pxまで。\n例：800×800は2倍で1600×1600。4倍では上限を超えます。\n入力512MiBまで。アプリ版の64MiB転送制限はありません。\n縦横比・フレーム数・fpsを保ち、音声をAACで引き継ぎます。\n細部が変わる可能性があるため、元映像と比較してください。\n\nComfyUIのoutput/FlashVSR-PodにMP4と処理情報JSONを保存します。\n時間・解像度によりGPUメモリ不足や時間切れになる場合があります。\n初回はモデル読込とTritonのコンパイルで時間が増えます。\n"
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      0,
+      "VIDEO"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.8,
+      "offset": [
+        60,
+        60
+      ]
+    }
+  },
+  "version": 0.4
+}
