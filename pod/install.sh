@@ -95,10 +95,12 @@ def prepare(source, destination, meta):
 
 
 def finalize(raw, source, destination, meta):
+    from fractions import Fraction
+    fps=Fraction(meta['fps_fraction'])
     ffmpeg(['-i', str(raw), '-protocol_whitelist', 'file,pipe', '-i', str(source),
             '-map', '0:v:0', '-map', '1:a:0?',
-            '-vf', f"crop={meta['width']}:{meta['height']}:0:0,setsar=1",
-            '-vsync', '0', '-c:v', 'libx264', '-preset', 'veryfast',
+            '-vf', f"crop={meta['width']}:{meta['height']}:0:0,setsar=1,setpts=N*{fps.denominator}/({fps.numerator}*TB)",
+            '-r', str(fps), '-vsync', 'cfr', '-c:v', 'libx264', '-preset', 'veryfast',
             '-crf', '18', '-threads', '2', '-pix_fmt', 'yuv420p',
             '-c:a', 'aac', '-b:a', '128k', '-af', 'apad',
             '-t', str(meta['duration_seconds']), '-movflags', '+faststart', str(destination)])
@@ -112,7 +114,7 @@ def verify_video(path, meta):
         raise RuntimeError('Output dimensions or frame count changed')
     from fractions import Fraction
     if abs(float(Fraction(v['avg_frame_rate']))-meta['fps']) > .001:
-        raise RuntimeError('Output FPS changed')
+        raise RuntimeError('Output FPS changed: expected '+meta['fps_fraction']+', got '+str(v['avg_frame_rate']))
     audio = any(s['codec_type'] == 'audio' for s in actual['streams'])
     if audio != meta['has_audio']:
         raise RuntimeError('Output audio presence changed')
