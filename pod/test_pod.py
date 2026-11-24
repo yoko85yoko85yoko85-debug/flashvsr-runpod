@@ -50,6 +50,22 @@ class Tests(unittest.TestCase):
             meta=media.metadata(source,2);engine.prepare(source,prepared,meta);engine.finalize(prepared,source,out,meta)
             self.assertTrue(engine.verify_video(out,meta));self.assertEqual((meta['width'],meta['height']),(192,256))
 
+    def test_fractional_fps_roundtrip(self):
+        from fractions import Fraction
+        for rate,rounded in [('24000/1001','23.98'),('30000/1001','29.97')]:
+            with tempfile.TemporaryDirectory() as tmp:
+                d=Path(tmp);source=d/'input.mp4';raw=d/'raw.mp4';out=d/'out.mp4'
+                subprocess.run(['/usr/bin/ffmpeg','-v','error','-y','-f','lavfi','-i','testsrc2=size=96x128:rate='+rate,
+                    '-f','lavfi','-i','sine=frequency=440:sample_rate=48000','-frames:v','30','-t','2','-c:v','libx264','-c:a','aac',str(source)],check=True)
+                meta=media.metadata(source,2)
+                subprocess.run(['/usr/bin/ffmpeg','-v','error','-y','-f','lavfi','-i','testsrc2=size=256x256:rate='+rounded,
+                    '-frames:v','30','-c:v','libx264',str(raw)],check=True)
+                engine.finalize(raw,source,out,meta)
+                self.assertTrue(engine.verify_video(out,meta))
+                stream=next(s for s in media.probe(out)['streams'] if s['codec_type']=='video')
+                self.assertEqual(Fraction(stream['avg_frame_rate']),Fraction(rate))
+                self.assertEqual(int(stream['nb_frames']),30)
+
     def test_local_model_path_and_versions(self):
         self.assertEqual(engine.ROOT,Path(__file__).parent/'FlashVSR_Plus')
         self.assertEqual(engine.UPSTREAM_REVISION,'b515ffc6dba57fdc9ad84c66cadd87d05f27590a')
