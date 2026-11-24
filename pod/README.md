@@ -101,3 +101,10 @@ https://huggingface.co/ruchangyao/FlashVSR_plus
 ```bash
 python -m unittest -v test_pod
 ```
+
+## FPS保存修正
+
+公式ストリーミング出力のエンコード段階で小数FPSが丸められるケースに対応し、
+最終保存時に元の正確な有理数FPS（例24000/1001）とフレーム番号からタイムスタンプ
+を再設定します。フレーム数・音声・寸法の検査は継続します。GPU推論部分は同じです。
+修正はengine.pyだけなので、既存Podでモデル再取得やComfyUI再起動は不要です。
