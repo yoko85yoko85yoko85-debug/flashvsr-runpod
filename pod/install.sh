@@ -227,6 +227,13 @@ def probe(path):
     return json.loads(r.stdout)
 
 
+def scaled_dimensions(width,height,scale):
+    if type(scale) not in (int,float) or not math.isfinite(scale) or scale not in (1.5,2,4):
+        raise ValueError('scale must be 1.5, 2 or 4')
+    # yuv420p requires even dimensions. Keep fractional-scale rounding within1px.
+    return max(2,2*round(width*scale/2)),max(2,2*round(height*scale/2))
+
+
 def metadata(path, scale):
     p = probe(path)
     videos = [s for s in p['streams'] if s.get('codec_type') == 'video' and not s.get('disposition', {}).get('attached_pic')]
@@ -252,12 +259,12 @@ def metadata(path, scale):
         raise ValueError('Input must be at most 30 seconds and 1-60 fps')
     if min(width, height) < 64 or max(width, height) > 1920 or width * height > 1920 * 1080:
         raise ValueError('Input dimensions must be 64-1920px, with area <= 1920x1080')
-    ow, oh = width * scale, height * scale
+    ow, oh = scaled_dimensions(width,height,scale)
     if ow % 2 or oh % 2:
         raise ValueError('Output dimensions must be even')
     mw, mh = ((ow+127)//128)*128, ((oh+127)//128)*128
     if max(mw, mh) > 2048 or mw*mh > 2048*2048:
-        raise ValueError('Initial version limits model output to 2048px per side; use 2x or a smaller source')
+        raise ValueError('Initial version limits model output to 2048px per side; use 1.5x/2x or a smaller source')
     # Inspect timestamps: reject VFR rather than silently changing its timing.
     r = subprocess.run(['/usr/bin/ffprobe', '-v', 'error', '-protocol_whitelist', 'file,pipe',
         '-select_streams', 'v:0', '-read_intervals', '%+#2000', '-show_entries', 'frame=best_effort_timestamp_time',
@@ -318,7 +325,7 @@ import comfy.model_management as mm
 from comfy_api.latest import ComfyExtension,io,ui,InputImpl,Types
 
 RUNTIME=Path(os.environ.get('FLASHVSR_POD_DIR','/opt/flashvsr-pod'))
-SCALES={'2倍':2,'4倍（公式推奨）':4}
+SCALES={'1.5倍':1.5,'2倍':2,'4倍（公式推奨）':4}
 MOTION={'標準（速度優先）':4,'大きな動き向け':2,'動き重視（処理時間増加）':1}
 
 
@@ -422,14 +429,15 @@ def build():
     note='''## FlashVSR+ Turbo：アップスケール専用
 
 1. Load Videoで動画をアップロード。
-2. 倍率を2倍または4倍に設定。
+2. 倍率を1.5倍・2倍・4倍から選択。
 3. Queueを実行すると、拡大後のMP4を保存・プレビューします。
 
 初期値：2倍・標準（速度優先）・シード1。
-公式モデル推奨は4倍です。2倍は実用サイズで比較する選択肢です。
+公式モデル推奨は4倍です。1.5倍・2倍は実用サイズで比較する選択肢です。
 
 30秒まで・固定fps1〜60・SDR動画。出力各辺2048pxまで。
-例：800×800は2倍で1600×1600。4倍では上限を超えます。
+例：1280×720は1.5倍で1920×1080。800×800は2倍で1600×1600。
+小数倍率の出力は、保存形式に合わせて2px刻みに丸めます。
 入力512MiBまで。アプリ版の64MiB転送制限はありません。
 縦横比・フレーム数・fpsを保ち、音声をAACで引き継ぎます。
 細部が変わる可能性があるため、元映像と比較してください。
