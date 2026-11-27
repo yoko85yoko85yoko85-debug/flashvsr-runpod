@@ -15,6 +15,13 @@ def probe(path):
     return json.loads(r.stdout)
 
 
+def scaled_dimensions(width,height,scale):
+    if type(scale) not in (int,float) or not math.isfinite(scale) or scale not in (1.5,2,4):
+        raise ValueError('scale must be 1.5, 2 or 4')
+    # yuv420p requires even dimensions. Keep fractional-scale rounding within1px.
+    return max(2,2*round(width*scale/2)),max(2,2*round(height*scale/2))
+
+
 def metadata(path, scale):
     p = probe(path)
     videos = [s for s in p['streams'] if s.get('codec_type') == 'video' and not s.get('disposition', {}).get('attached_pic')]
@@ -40,12 +47,12 @@ def metadata(path, scale):
         raise ValueError('Input must be at most 30 seconds and 1-60 fps')
     if min(width, height) < 64 or max(width, height) > 1920 or width * height > 1920 * 1080:
         raise ValueError('Input dimensions must be 64-1920px, with area <= 1920x1080')
-    ow, oh = width * scale, height * scale
+    ow, oh = scaled_dimensions(width,height,scale)
     if ow % 2 or oh % 2:
         raise ValueError('Output dimensions must be even')
     mw, mh = ((ow+127)//128)*128, ((oh+127)//128)*128
     if max(mw, mh) > 2048 or mw*mh > 2048*2048:
-        raise ValueError('Initial version limits model output to 2048px per side; use 2x or a smaller source')
+        raise ValueError('Initial version limits model output to 2048px per side; use 1.5x/2x or a smaller source')
     # Inspect timestamps: reject VFR rather than silently changing its timing.
     r = subprocess.run(['/usr/bin/ffprobe', '-v', 'error', '-protocol_whitelist', 'file,pipe',
         '-select_streams', 'v:0', '-read_intervals', '%+#2000', '-show_entries', 'frame=best_effort_timestamp_time',
