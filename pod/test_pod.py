@@ -47,8 +47,8 @@ class Tests(unittest.TestCase):
             d=Path(tmp);source=d/'input.mp4';prepared=d/'prepared.mp4';out=d/'out.mp4'
             subprocess.run(['/usr/bin/ffmpeg','-v','error','-y','-f','lavfi','-i','testsrc2=size=96x128:rate=12',
                 '-f','lavfi','-i','sine=frequency=440:sample_rate=48000','-t','1','-c:v','libx264','-c:a','aac',str(source)],check=True)
-            meta=media.metadata(source,2);engine.prepare(source,prepared,meta);engine.finalize(prepared,source,out,meta)
-            self.assertTrue(engine.verify_video(out,meta));self.assertEqual((meta['width'],meta['height']),(192,256))
+            meta=media.metadata(source,1.5);engine.prepare(source,prepared,meta);engine.finalize(prepared,source,out,meta)
+            self.assertTrue(engine.verify_video(out,meta));self.assertEqual((meta['width'],meta['height']),(144,192))
 
     def test_fractional_fps_roundtrip(self):
         from fractions import Fraction
@@ -65,6 +65,27 @@ class Tests(unittest.TestCase):
                 stream=next(s for s in media.probe(out)['streams'] if s['codec_type']=='video')
                 self.assertEqual(Fraction(stream['avg_frame_rate']),Fraction(rate))
                 self.assertEqual(int(stream['nb_frames']),30)
+
+    def test_fractional_scale_sizes(self):
+        m,_=self.adapter()
+        self.assertEqual(m.SCALES['1.5倍'],1.5)
+        self.assertEqual(media.scaled_dimensions(1280,720,1.5),(1920,1080))
+        for w,h in [(1279,719),(97,129),(1280,720)]:
+            ow,oh=media.scaled_dimensions(w,h,1.5)
+            self.assertEqual(ow%2,0);self.assertEqual(oh%2,0)
+            self.assertLessEqual(abs(ow-w*1.5),1);self.assertLessEqual(abs(oh-h*1.5),1)
+        for scale in (True,1,0,-1,float('nan'),float('inf'),'1.5'):
+            with self.assertRaises(ValueError):media.scaled_dimensions(1280,720,scale)
+
+    def test_fractional_scale_full_hd_metadata(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source=Path(tmp)/'hd.mp4'
+            subprocess.run(['/usr/bin/ffmpeg','-v','error','-y','-f','lavfi','-i','testsrc2=size=1280x720:rate=24',
+                '-frames:v','2','-c:v','libx264','-preset','ultrafast',str(source)],check=True)
+            meta=media.metadata(source,1.5)
+            self.assertEqual((meta['width'],meta['height']),(1920,1080))
+            self.assertEqual((meta['model_width'],meta['model_height']),(1920,1152))
+            with self.assertRaises(ValueError):media.metadata(source,2)
 
     def test_local_model_path_and_versions(self):
         self.assertEqual(engine.ROOT,Path(__file__).parent/'FlashVSR_Plus')
