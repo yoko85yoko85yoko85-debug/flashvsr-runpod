@@ -6,7 +6,7 @@ import comfy.model_management as mm
 from comfy_api.latest import ComfyExtension,io,ui,InputImpl,Types
 
 RUNTIME=Path(os.environ.get('FLASHVSR_POD_DIR','/opt/flashvsr-pod'))
-SCALES={'2倍':2,'4倍（公式推奨）':4}
+SCALES={'1.5倍':1.5,'2倍':2,'4倍（公式推奨）':4}
 MOTION={'標準（速度優先）':4,'大きな動き向け':2,'動き重視（処理時間増加）':1}
 
 
